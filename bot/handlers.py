@@ -85,6 +85,7 @@ class SubmissionHandler:
                         disable_web_page_preview=False
                     )
                     logger.info(f"已转发来自用户 {user_id} 的投稿")
+                    await update.message.reply_text(f"✅ 您的投稿已成功转发到频道 {BOOM_CHANNEL_ID}！")
                 else:
                     await context.bot.send_message(
                         chat_id=RECORDING_CHANNEL_ID,
@@ -93,7 +94,7 @@ class SubmissionHandler:
                         disable_web_page_preview=False
                     )
                     logger.info(f"已转发来自用户 {user_id} 的投稿")
-                await update.message.reply_text("✅ 您的投稿已成功转发到频道！")
+                    await update.message.reply_text(f"✅ 您的投稿已成功转发到频道 {RECORDING_CHANNEL_ID}！")
             else:
                 await update.message.reply_text("❌ 投稿失败，模板格式不正确！")
         except Exception as e:
