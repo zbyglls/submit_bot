@@ -28,10 +28,7 @@ RECOMMEND_REQUIRED_FIELDS = [
 ]
 
 def validate_template(text: str) -> tuple[bool, str]:
-    """
-    验证文本是否符合模板格式
-    返回: (是否有效, 错误信息)
-    """
+    """验证文本是否符合模板格式"""
     if not text:
         return False, "投稿内容不能为空"
         
@@ -41,11 +38,32 @@ def validate_template(text: str) -> tuple[bool, str]:
     # 检查每个必填字段
     missing_fields = []
     for field in required_fields:
-        if f"{field}：" not in text and f"{field}:" not in text:
+        # 支持多种冒号格式
+        colon_variants = ['：', ':', '∶', '︰', '﹕']
+        field_found = False
+        if f"{field}" in text:
+            field_found = True
+            break
+                
+        if not field_found:
             missing_fields.append(field)
             
     if missing_fields:
         return False, f"缺少必填字段: {', '.join(missing_fields)}"
+        
+    # 检查字段值是否为空或仅包含特殊字符
+    empty_fields = []
+    lines = text.split('\n')
+    for line in lines:
+        for field in required_fields:
+            for colon in colon_variants:
+                if line.startswith(f"{field}{colon}"):
+                    value = line.split(colon, 1)[1].strip()
+                    if not value or value in ['']:
+                        empty_fields.append(field)
+                        
+    if empty_fields:
+        return False, f"以下字段内容不能为空: {', '.join(set(empty_fields))}"
         
     return True, ""
 
@@ -97,7 +115,8 @@ class SubmissionHandler:
                     logger.info(f"已转发来自用户 {user_id} 的投稿")
                     await update.message.reply_text(f"✅ 您的投稿已成功转发到频道 {RECORDING_CHANNEL_ID}！")
             else:
-                await update.message.reply_text("❌ 投稿失败，模板格式不正确！")
+                await update.message.reply_text(f"❌ 投稿失败，模板格式不正确！\n{error_msg}")
+                logger.info(error_msg)
         except Exception as e:
             logger.error(f"转发消息失败: {e}")
             await update.message.reply_text("❌ 投稿失败，请稍后重试！")
