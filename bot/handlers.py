@@ -14,7 +14,8 @@ REPORT_REQUIRED_FIELDS = [
     "花费",
     "样貌身材",
     "经历",
-    "验证留名"
+    "验证留名",
+    "出击证明见评论区（聊天记录或付款记录）"
 ]
 
 RECOMMEND_REQUIRED_FIELDS = [
