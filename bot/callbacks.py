@@ -36,7 +36,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             template = """
             *请按照以下模板提交，图片请自行发布在评论区，点击下方模板可直接复制* ⬇️：
             `
-网友推荐
+网友分享
 老师花名：
 联系方式：
 价格：

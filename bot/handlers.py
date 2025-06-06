@@ -1,7 +1,9 @@
+from datetime import datetime
 from bot.forbidden_words import ALL_FORBIDDEN_WORDS
 from config import BOOM_CHANNEL_ID, RECORDING_CHANNEL_ID
 from utils import logger
-from telegram import Update
+from typing import Dict, List
+from telegram import Update, InputMediaPhoto, InputMediaVideo, Message
 from telegram.ext import MessageHandler, filters, ContextTypes
 from bot.limiter import RateLimiter
 
@@ -70,6 +72,7 @@ def validate_template(text: str) -> tuple[bool, str]:
 class SubmissionHandler:
     def __init__(self):
         self.rate_limiter = RateLimiter()
+        self.media_groups: Dict[str, List[Message]] = {}
     async def handle_submission(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理用户投稿"""
         try:
@@ -84,7 +87,30 @@ class SubmissionHandler:
             # 记录本次发送
             self.rate_limiter.add_message(user_id)
             text = message.caption if message.caption else message.text
+            # 处理媒体组消息
+            if message.media_group_id:
+                # 初始化媒体组
+                if message.media_group_id not in self.media_groups:
+                    self.media_groups[message.media_group_id] = {
+                        'messages': [],
+                        'text': text,
+                        'timestamp': datetime.now()
+                    }
+                
+                # 添加到媒体组
+                self.media_groups[message.media_group_id]['messages'].append(message)
+                if len(self.media_groups[message.media_group_id]['messages']) < 10:
+                    logger.info(f"等待媒体组 {message.media_group_id} 的其他文件...")
+                    return
             
+            media = []
+            media_messages = []
+            if message.media_group_id and message.media_group_id in self.media_groups:
+                media_data = self.media_groups[message.media_group_id]
+                media_messages = sorted(media_data['messages'], key=lambda x: x.message_id)
+                text = media_data['text']
+            elif message.photo or message.video:
+                media_messages = [message]
             # 验证模板格式
             is_valid, error_msg = validate_template(text)
             if is_valid:
@@ -97,16 +123,37 @@ class SubmissionHandler:
                         "注意: 请勿发布违规内容。"
                     )
                     return
-                # 转发消息到指定频道
+                
+                if media_messages:
+                    first_msg = media_messages[0]
+                    if first_msg.photo:
+                        media.append(
+                            InputMediaPhoto(
+                                media=first_msg.photo[-1].file_id,
+                                caption=text,
+                                parse_mode='HTML'
+                            )
+                        )
+                    elif first_msg.video:
+                        media.append(
+                            InputMediaVideo(
+                                media=first_msg.video.file_id,
+                                caption=text,
+                                parse_mode='HTML'
+                            )
+                        )
+                # 处理剩余媒体文件
+                for msg in media_messages[1:]:
+                    if msg.photo:
+                        media.append(InputMediaPhoto(media=msg.photo[-1].file_id))
+                    elif msg.video:
+                        media.append(InputMediaVideo(media=msg.video.file_id))
+                
                 target_channel_id = BOOM_CHANNEL_ID if "吃🐔雷报" in text else RECORDING_CHANNEL_ID
-                if message.photo:
-                    photo = message.photo[-1]
-                    await context.bot.send_photo(
-                        chat_id=target_channel_id,
-                        photo=photo.file_id,
-                        caption=text,
-                        parse_mode='HTML'
-                    )
+
+                if media:
+                    # 发送媒体组
+                    await context.bot.send_media_group(chat_id=target_channel_id, media=media)
                 else:
                     await context.bot.send_message(
                         chat_id=target_channel_id,
@@ -114,6 +161,10 @@ class SubmissionHandler:
                         parse_mode='HTML',
                         disable_web_page_preview=False
                     )
+                
+                if message.media_group_id:
+                    del self.media_groups[message.media_group_id]
+
                 logger.info(f"已转发来自用户 {user_id} 的投稿")
                 await update.message.reply_text(f"✅ 您的投稿已成功转发到频道 {target_channel_id}！")
             else:
@@ -149,7 +200,7 @@ def register_handlers(app):
     logger.info("开始注册处理器")
     submission_handler = SubmissionHandler()
     message_filter = (
-        (filters.TEXT | filters.PHOTO) 
+        (filters.TEXT | filters.PHOTO | filters.VIDEO) 
         & filters.ChatType.PRIVATE
         & ~filters.FORWARDED 
         & ~filters.UpdateType.EDITED_MESSAGE
