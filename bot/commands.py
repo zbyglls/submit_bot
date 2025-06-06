@@ -19,6 +19,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("差评😤", callback_data='boom_report')],
             [InlineKeyboardButton("分享❤", callback_data='recommend')],
         ]
+        
         reply_markup = InlineKeyboardMarkup(keyboard)
             
         await update.message.reply_text(welcome_message, reply_markup=reply_markup)
