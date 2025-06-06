@@ -73,6 +73,7 @@ class SubmissionHandler:
     def __init__(self):
         self.rate_limiter = RateLimiter()
         self.media_groups: Dict[str, List[Message]] = {}
+        
     async def handle_submission(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理用户投稿"""
         try:
