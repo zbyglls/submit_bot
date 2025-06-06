@@ -197,7 +197,6 @@ def contains_forbidden_words(text: str) -> bool:
 
 
 
-
 def register_handlers(app):
     """注册所有非命令处理器"""
     logger.info("开始注册处理器")
