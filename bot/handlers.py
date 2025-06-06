@@ -83,11 +83,13 @@ class SubmissionHandler:
                 
             # 记录本次发送
             self.rate_limiter.add_message(user_id)
+            text = message.caption if message.caption else message.text
+            
             # 验证模板格式
-            is_valid, error_msg = validate_template(message.text)
+            is_valid, error_msg = validate_template(text)
             if is_valid:
                 # 检查违禁词
-                if contains_forbidden_words(message.text):
+                if contains_forbidden_words(text):
                     logger.warning(f"用户 {user_id} 的投稿包含违禁词")
                     await message.reply_text(
                         "❌ 投稿内容包含违禁词！\n"
@@ -96,24 +98,24 @@ class SubmissionHandler:
                     )
                     return
                 # 转发消息到指定频道
-                if "吃🐔雷报" in message.text:
-                    await context.bot.send_message(
-                        chat_id=BOOM_CHANNEL_ID,
-                        text=message.text,
-                        parse_mode='HTML',
-                        disable_web_page_preview=False
+                target_channel_id = BOOM_CHANNEL_ID if "吃🐔雷报" in text else RECORDING_CHANNEL_ID
+                if message.photo:
+                    photo = message.photo[-1]
+                    await context.bot.send_photo(
+                        chat_id=target_channel_id,
+                        photo=photo.file_id,
+                        caption=text,
+                        parse_mode='HTML'
                     )
-                    logger.info(f"已转发来自用户 {user_id} 的投稿")
-                    await update.message.reply_text(f"✅ 您的投稿已成功转发到频道 {BOOM_CHANNEL_ID}！")
                 else:
                     await context.bot.send_message(
-                        chat_id=RECORDING_CHANNEL_ID,
-                        text=message.text,
+                        chat_id=target_channel_id,
+                        text=text,
                         parse_mode='HTML',
                         disable_web_page_preview=False
                     )
-                    logger.info(f"已转发来自用户 {user_id} 的投稿")
-                    await update.message.reply_text(f"✅ 您的投稿已成功转发到频道 {RECORDING_CHANNEL_ID}！")
+                logger.info(f"已转发来自用户 {user_id} 的投稿")
+                await update.message.reply_text(f"✅ 您的投稿已成功转发到频道 {target_channel_id}！")
             else:
                 await update.message.reply_text(f"❌ 投稿失败，模板格式不正确！\n{error_msg}")
                 logger.info(error_msg)
@@ -147,7 +149,7 @@ def register_handlers(app):
     logger.info("开始注册处理器")
     submission_handler = SubmissionHandler()
     message_filter = (
-        filters.TEXT 
+        (filters.TEXT | filters.PHOTO) 
         & filters.ChatType.PRIVATE
         & ~filters.FORWARDED 
         & ~filters.UpdateType.EDITED_MESSAGE
