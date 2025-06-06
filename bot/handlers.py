@@ -142,6 +142,7 @@ class SubmissionHandler:
                                 parse_mode='HTML'
                             )
                         )
+                        
                 # 处理剩余媒体文件
                 for msg in media_messages[1:]:
                     if msg.photo:
