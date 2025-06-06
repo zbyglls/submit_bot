@@ -10,14 +10,14 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         welcome_message = (
             f"👋 你好 {update.message.from_user.first_name}!\n\n"
             "欢迎使用投稿机器人！你可以：\n"
-            "1. 投稿雷报💩\n"
-            "2. 推荐老师❤\n\n"
+            "1. 投稿差评😤\n"
+            "2. 分享老师❤\n\n"
             "选择下方按钮获取对应模板"
         )
         
         keyboard = [
-            [InlineKeyboardButton("雷报💩", callback_data='boom_report')],
-            [InlineKeyboardButton("推荐❤", callback_data='recommend')],
+            [InlineKeyboardButton("差评😤", callback_data='boom_report')],
+            [InlineKeyboardButton("分享❤", callback_data='recommend')],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
             
