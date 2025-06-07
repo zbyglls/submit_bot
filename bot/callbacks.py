@@ -13,7 +13,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         callback_data = query.data
         if callback_data == 'boom_report':
             template = """
-            *请按照以下模板提交雷报，出击证明请自行发布在评论区，点击下方模板可直接复制* ⬇️：
+            *请按照以下模板提交雷报，出击证明1张or3张，也可自行发布在评论区，点击下方模板可直接复制* ⬇️：
             `
 吃🐔雷报
 老师花名：
@@ -34,7 +34,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
 
         elif callback_data == 'recommend':
             template = """
-            *请按照以下模板提交，图片请自行发布在评论区，点击下方模板可直接复制* ⬇️：
+            *请按照以下模板提交，图片1张or3张，也可自行发布在评论区，点击下方模板可直接复制* ⬇️：
             `
 网友分享
 老师花名：

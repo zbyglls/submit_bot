@@ -85,7 +85,9 @@ class SubmissionHandler:
             if not can_submit:
                 await message.reply_text(f"❌ {error_msg}")
                 return
-                
+            
+            media = []
+            media_messages = []    
             # 记录本次发送
             self.rate_limiter.add_message(user_id)
             text = message.caption if message.caption else message.text
@@ -101,12 +103,13 @@ class SubmissionHandler:
                 
                 # 添加到媒体组
                 self.media_groups[message.media_group_id]['messages'].append(message)
-                if len(self.media_groups[message.media_group_id]['messages']) < 10:
+                current_messages = self.media_groups[message.media_group_id]['messages']
+                if len(current_messages) < 3:
                     logger.info(f"等待媒体组 {message.media_group_id} 的其他文件...")
                     return
-            
-            media = []
-            media_messages = []
+                
+
+
             if message.media_group_id and message.media_group_id in self.media_groups:
                 media_data = self.media_groups[message.media_group_id]
                 media_messages = sorted(media_data['messages'], key=lambda x: x.message_id)
@@ -151,7 +154,7 @@ class SubmissionHandler:
                         media.append(InputMediaPhoto(media=msg.photo[-1].file_id))
                     elif msg.video:
                         media.append(InputMediaVideo(media=msg.video.file_id))
-                
+                    
                 target_channel_id = BOOM_CHANNEL_ID if "吃🐔雷报" in text else RECORDING_CHANNEL_ID
 
                 if media:
